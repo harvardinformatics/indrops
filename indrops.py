@@ -4,12 +4,7 @@ import operator
 from collections import defaultdict, OrderedDict
 import errno
 
-# cPickle is a faster version of pickle that isn't installed in python3
-# inserted try statement just in case
-try:
-   import cPickle as pickle
-except:
-   import pickle
+import pickle
 
 from io import BytesIO
 
@@ -44,7 +39,7 @@ def string_hamming_distance(str1, str2):
 
     eg "karolin" and "kathrin" is 3.
     """
-    return sum(itertools.imap(operator.ne, str1, str2))
+    return sum(map(operator.ne, str1, str2))
 
 ___tbl = {'A':'T', 'T':'A', 'C':'G', 'G':'C', 'N':'N'}
 def rev_comp(seq):
@@ -857,7 +852,7 @@ class IndropsLibrary():
         print_to_stderr("Merging BAM output.")
         try:
             subprocess.check_output([self.project.paths.samtools, 'merge', '-f', merged_bam_filename]+genomic_bams, stderr=subprocess.STDOUT)
-        except subprocess.CalledProcessError, err:
+        except subprocess.CalledProcessError as err:
             print_to_stderr("   CMD: %s" % str(err.cmd)[:400])
             print_to_stderr("   stdout/stderr:")
             print_to_stderr(err.output)
@@ -866,7 +861,7 @@ class IndropsLibrary():
         print_to_stderr("Indexing merged BAM output.")
         try:
             subprocess.check_output([self.project.paths.samtools, 'index', merged_bam_filename], stderr=subprocess.STDOUT)
-        except subprocess.CalledProcessError, err:
+        except subprocess.CalledProcessError as err:
             print_to_stderr("   CMD: %s" % str(err.cmd)[:400])
             print_to_stderr("   stdout/stderr:")
             print_to_stderr(err.output)
@@ -960,7 +955,7 @@ class IndropsLibrary():
         sorted_bam = os.path.join(self.paths.quant_dir, '%s%s.genomic.sorted.bam' % (analysis_prefix,barcode))
         try:
             subprocess.check_output([self.project.paths.rsem_tbam2gbam, self.project.paths.bowtie_index, aligned_bam, genomic_bam], stderr=subprocess.STDOUT)
-        except subprocess.CalledProcessError, err:
+        except subprocess.CalledProcessError as err:
             print_to_stderr("   CMD: %s" % str(err.cmd)[:100])
             print_to_stderr("   stdout/stderr:")
             print_to_stderr(err.output)
@@ -968,7 +963,7 @@ class IndropsLibrary():
 
         try:
             subprocess.check_output([self.project.paths.samtools, 'sort', '-o', sorted_bam, genomic_bam], stderr=subprocess.STDOUT)
-        except subprocess.CalledProcessError, err:
+        except subprocess.CalledProcessError as err:
             print_to_stderr("   CMD: %s" % str(err.cmd)[:100])
             print_to_stderr("   stdout/stderr:")
             print_to_stderr(err.output)
@@ -976,7 +971,7 @@ class IndropsLibrary():
 
         try:
             subprocess.check_output([self.project.paths.samtools, 'index', sorted_bam], stderr=subprocess.STDOUT)
-        except subprocess.CalledProcessError, err:
+        except subprocess.CalledProcessError as err:
             print_to_stderr("   CMD: %s" % str(err.cmd)[:100])
             print_to_stderr("   stdout/stderr:")
             print_to_stderr(err.output)
@@ -1572,7 +1567,7 @@ class V3Demultiplexer():
     def filter_and_count_reads(self):
         # Prepare error corrected index sets
         self.sequence_to_index_mapping = {}
-        libs = self.libraries.keys()
+        libs = list(self.libraries.keys())
         self.sequence_to_index_mapping = dict(zip(libs, libs))
         index_neighborhoods = [set(seq_neighborhood(lib, 1)) for lib in libs]
         for lib, clibs in zip(libs, index_neighborhoods):
@@ -1709,7 +1704,7 @@ if __name__=="__main__":
             if lib not in target_libraries:
                 target_libraries.append(lib)
     else:
-        target_libraries = project.libraries.keys()
+        target_libraries = list(project.libraries.keys())
     lib_query = set(target_libraries)
 
     target_runs = []
@@ -1718,7 +1713,7 @@ if __name__=="__main__":
             assert run in project.runs
             target_runs.append(run)
     else:
-        target_runs = project.runs.keys()
+        target_runs = list(project.runs.keys())
 
     target_library_parts = []
     for lib in target_libraries:

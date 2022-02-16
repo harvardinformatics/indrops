@@ -1,8 +1,5 @@
 import re
-try:
-   import cPickle as pickle
-except:
-   import pickle
+import pickle
 
 from indrops import from_fastq, to_fastq
 

@@ -1,9 +1,6 @@
 import pysam
 from collections import defaultdict
-try:
-   import cPickle as pickle
-except:
-   import pickle
+import pickle
 
 from copy import copy
 from itertools import combinations
@@ -262,7 +259,7 @@ def quant(args):
             max_contrib = max(gene_contrib.values())
 
             #Gene with max contrib
-            max_contrib_genes = filter(lambda g: gene_contrib[g]==max_contrib, gene_contrib.keys())
+            max_contrib_genes = (gene for (gene, contrib) in gene_contrib.items() if contrib == max_contrib)
 
             #Pick a gene among those with the highest value. Which doesn't matter until the last step
             g = max_contrib_genes[0]
@@ -287,7 +284,7 @@ def quant(args):
                 # Update the gene contribs based on the new r0, but on the 'old' g0.
                 # That is why we remove g from g0 after this step only
                 gene_contrib = dict((gi, sum(gene_read_mapping[(gi, r)] for r in r0)) for gi in g0)
-                ambig_partners = filter(lambda g: gene_contrib[g]==0, max_contrib_genes)
+                ambig_partners = (gene for (gene, contrib) in max_contrib_genes if contrib == 0)
                
         
                 #Ambig partners will often be a 1-element set. That's ok.
