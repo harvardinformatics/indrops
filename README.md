@@ -17,21 +17,12 @@ A project will be aligned against the same reference genome with the same alignm
 
 ## Installation
 The package requires
-  - Python 2.7 (with the packages numpy, scipy, matplotlib, pysam>0.9.0, pyyaml, pyfasta). [See Appendix 2]
+  - Python 3.x (with the packages numpy, matplotlib, pysam>0.9.0, pyyaml, pyfasta). [See Appendix 2]
   - RSEM (1.2.19+)
   - Bowtie (1.1.1+)
   - samtools (1.3.1+) [See Appendix 3] *This specific version is needed to account for a BAM-format oddity in RSEM output.
-  - Java 
-The path to the directories containing these executables should be set in the project YAML.
-If these executables can be found in the PATH variables, this project YAML paths can be left empty, or not specified.
-
-### March 7th Notice -- PySAM version.
-
-Previous installation instructions install PySAM version 0.6.0. To install the correct PySAM version, use the following commands:
-
-  conda remove pysam
-  conda install pip
-  pip install pysam==0.9.1
+  - trimmomatic (0.33+)
+The path to the directories containing these executables should be in your PATH environment variable.
 
 
 ## Project YAML file
@@ -42,12 +33,6 @@ An example YAML file is provided in `test/test_project.yaml`. It should contain 
     project_dir : "/path/to/project/dir"  #This dir should be user-owned and writable, all output will go into this dir.
     paths : 
       bowtie_index : "/path/to/index" #This index will be built automatically
-      # The paths below can be omitted if the relevant directories are already on $PATH
-      bowtie_dir : "/path/to/bowtie/dir/"
-      python_dir : "/path/to/env/bins/"
-      java_dir: "/path/to/java/dir/"
-      rsem_dir: "/path/to/rsem/dir/"
-      samtools_dir: "/path/to/samtools-1.3.1/bin/" #This needs to be version 1.3.1, 1.3 is not good enough!
 
     sequencing_runs : 
       # A list of sequencing runs which form the project. 
@@ -293,78 +278,29 @@ by specifying the total number of jobs (--total-workers) and the index of the cu
     # Submitting the 20 commands below would filter all run parts within the project in 20 different parts.
     python indrops.py test_project.yaml filter --total-workers 20 --worker-index [0-19]
 
-## Appendix 2: Using a custom Python environment on the Orchestra Cluster
+## Appendix 2: Using a custom Python environment on the Cannon Cluster
 
-### How to use an existing environment
+### How to create a new conda environment
 
-#### Option 1 (simpler, but uglier):
-Using the example installed with the instructions below, in "/groups/klein/adrian/pyndrops”:
+*On Cannon*: 
 
-    source /groups/klein/adrian/miniconda/bin/activate /groups/klein/adrian/pyndrops
+Load the default `Anaconda3` environment module, create a conda environment (called `indrops`) with the software defined in the environment.yml file in this repository, and activate the conda environment:
 
-(To make this line shorter, prepend “ /groups/klein/adrian/miniconda/bin/“ to PATH.)
+```
+ml Anaconda3
+conda env create -f environment.yml -n indrops
+...
+source activate indrops
+```
 
-The terminal should now be prepended with  (/groups/klein/adrian/pyndrops):  (/groups/klein/adrian/pyndrops)av79@loge:~$ (This is the ugly part)
+#### In another environment (e.g., standalone server or local workstation)
 
-Check that the correct python executable is being used:
+1. Download and install [Miniforge](https://github.com/conda-forge/miniforge)
 
-    which python
+2. Create a conda environment from the environment and activate the environment:
 
-returns:
-
-    /groups/klein/adrian/pyndrops/bin/python
-
-Test that all packages can be imported:
-
-    python -c """import yaml; import pysam; import pyfasta; import numpy; import matplotlib; print('Nice work. All packages loaded correctly.')"""
-    # Should print :
-    # "Nice work. All packages loaded correctly.""
-
-#### Option 2 (slightly harder, but shorter prefix):
-Using the example above, installed in "/groups/klein/adrian/pyndrops”.
-This assumes you prepended “ /groups/klein/adrian/miniconda/bin/“ to PATH.
-
-Add “/groups/klein/adrian” as a place to search for python environments, with
-
-    conda config --add envs_dirs '/groups/klein/adrian/'
-
-Then, you only need
-
-    source activate pyndrops
-
-Run the same tests are above.
-
-Now, "python" should refer to this specific python installation!
-
-### How to install conda and create a new environment
-
-Download Miniconda (the anaconda package manager, without all the packages)
-
-    mkdir -pv /user_owned/path
-    cd  /user_owned/path
-    wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh
-
-Install Miniconda
-
-    bash Miniconda-latest-Linux-x86_64.sh
-    # Agree to license with “yes”, and choose to install in a directory that is user owned.
-    # I installed it in: /groups/klein/adrian/miniconda
-
-Create a new Python environment (in this example, in /groups/klein/adrian/pyndrops)
-install Python2.7, Numpy, Scipy, Pandas, Matplotlib, PyYaml, PySAM
-
-    conda create -p /groups/klein/adrian/pyndrops python numpy scipy pandas pyyaml matplotlib pip
-    source activate /groups/klein/adrian/pyndrops
-    pip install pyfasta pysam==0.9.1
-
-## Appendix 3: Installing Samtools 1.3.1
-
-    mkdir -pv SAMTOOLS_DIR
-    cd SAMTOOLS_DIR
-    wget https://github.com/samtools/samtools/releases/download/1.3.1/samtools-1.3.1.tar.bz2
-    tar xvfj samtools-1.3.1.tar.bz2
-    cd samtools-1.3.1
-    make
-    make prefix=. install
-
-Now add `SAMTOOLS_DIR/samtools-1.3.1/bin/` as the `samtools_dir` in your project YAML file.
+```
+conda env create -f environment.yml -n indrops
+...
+conda activate indrops
+```
