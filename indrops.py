@@ -1,4 +1,5 @@
 import os, subprocess
+from pathlib import Path
 import itertools
 import operator
 from collections import defaultdict, OrderedDict
@@ -377,19 +378,20 @@ class IndropsProject():
         gene_biotype_dict = defaultdict(set)
 
         # Read through GTF file once to get all gene names
-        for line in subprocess.Popen(["gzip", "--stdout", "-d", gzipped_transcriptome_gtf], stdout=subprocess.PIPE).stdout:
-            # Skip non-gene feature lines.
-            if '\tgene\t' not in line:
-                continue
-                
-            gene_biotype_match = re.search(r'gene_biotype \"(.*?)\";', line)
-            gene_name_match = re.search(r'gene_name \"(.*?)\";', line)
-            if gene_name_match and gene_biotype_match:
-                gene_name = gene_name_match.group(1)
-                gene_biotype = gene_biotype_match.group(1)
-                
-                # Record biotype.
-                gene_biotype_dict[gene_name].add(gene_biotype)
+        with gzip.open(gzipped_transcriptome_gtf, mode='rt') as transcriptome_gtf:
+            for line in transcriptome_gtf:
+                # Skip non-gene feature lines.
+                if '\tgene\t' not in line:
+                    continue
+                    
+                gene_biotype_match = re.search(r'gene_biotype \"(.*?)\";', line)
+                gene_name_match = re.search(r'gene_name \"(.*?)\";', line)
+                if gene_name_match and gene_biotype_match:
+                    gene_name = gene_name_match.group(1)
+                    gene_biotype = gene_biotype_match.group(1)
+                    
+                    # Record biotype.
+                    gene_biotype_dict[gene_name].add(gene_biotype)
 
         # Detect read-through genes by name. Name must be a fusion of two other gene names 'G1-G2'.
         readthrough_genes = set()
@@ -414,28 +416,29 @@ class IndropsProject():
 
         # Go through GTF file again, annotating each transcript_id with the gene and outputting to a new GTF file.
         output_gtf = open(gtf_with_genenames_in_transcript_id, 'w')
-        for line in subprocess.Popen(["gzip", "--stdout", "-d", gzipped_transcriptome_gtf], stdout=subprocess.PIPE).stdout:
-            # Skip non-transcript feature lines.
-            if 'transcript_id' not in line:
-                continue
-                
-            gene_name_match = re.search(r'gene_name \"(.*?)\";', line)
-            if gene_name_match:
-                gene_name = gene_name_match.group(1)
-                if gene_name in valid_genes:
+        with gzip.open(gzipped_transcriptome_gtf, mode='rt') as transcriptome_gtf:
+            for line in transcriptome_gtf:
+                # Skip non-transcript feature lines.
+                if 'transcript_id' not in line:
+                    continue
                     
-                    # An unusual edgecase in the GTF for Danio Rerio rel89
-                    if ' ' in gene_name:
-                        gene_name = gene_name.replace(' ', '_')
+                gene_name_match = re.search(r'gene_name \"(.*?)\";', line)
+                if gene_name_match:
+                    gene_name = gene_name_match.group(1)
+                    if gene_name in valid_genes:
+                        
+                        # An unusual edgecase in the GTF for Danio Rerio rel89
+                        if ' ' in gene_name:
+                            gene_name = gene_name.replace(' ', '_')
 
-                    out_line = re.sub(r'(?<=transcript_id ")(.*?)(?=";)', r'\1|'+gene_name, line)
-                    output_gtf.write(out_line)
-                    if '\ttranscript\t' in line:
-                        transcripts_counter['valid'] += 1
-                elif gene_name in pseudogenes and '\ttranscript\t' in line:
-                    transcripts_counter['pseudogenes'] += 1
-                elif gene_name in readthrough_genes and '\ttranscript\t' in line:
-                    transcripts_counter['readthrough_genes'] += 1
+                        out_line = re.sub(r'(?<=transcript_id ")(.*?)(?=";)', r'\1|'+gene_name, line)
+                        output_gtf.write(out_line)
+                        if '\ttranscript\t' in line:
+                            transcripts_counter['valid'] += 1
+                    elif gene_name in pseudogenes and '\ttranscript\t' in line:
+                        transcripts_counter['pseudogenes'] += 1
+                    elif gene_name in readthrough_genes and '\ttranscript\t' in line:
+                        transcripts_counter['readthrough_genes'] += 1
         output_gtf.close()
 
         print_to_stderr('Filtered GTF contains %d transcripts (%d genes)' % (transcripts_counter['valid'], len(valid_genes)))
@@ -449,11 +452,8 @@ class IndropsProject():
         index_dir = os.path.dirname(self.paths.bowtie_index)
         self.project_check_dir(index_dir)
 
-        genome_filename = os.path.join(index_dir, '.'.join(gzipped_genome_softmasked_fasta_filename.split('.')[:-1]))
+        genome_filename = Path(gzipped_genome_softmasked_fasta_filename).with_suffix('')
 
-        gtf_filename = os.path.join(index_dir, gzipped_transcriptome_gtf.split('/')[-1])
-        gtf_prefix = '.'.join(gtf_filename.split('.')[:-2])
-        # gtf_with_genenames_in_transcript_id = gtf_prefix + '.annotated.gtf'
         gtf_with_genenames_in_transcript_id = self.paths.bowtie_index + '.gtf'
 
         print_to_stderr('Filtering GTF')
