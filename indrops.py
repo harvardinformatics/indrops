@@ -192,7 +192,7 @@ class IndropsProject():
 
     def __init__(self, project_yaml_file_handle, read_only=False):
 
-        self.yaml = yaml.load(project_yaml_file_handle)
+        self.yaml = yaml.load(project_yaml_file_handle, Loader=yaml.Loader)
 
         self.name = self.yaml['project_name']
         self.project_dir = self.yaml['project_dir']
@@ -292,17 +292,9 @@ class IndropsProject():
             script_dir = os.path.dirname(os.path.realpath(__file__))
             #Read defaults
             with open(os.path.join(script_dir, 'default_parameters.yaml'), 'r') as f:
-                paths = yaml.load(f)['paths']
+                paths = yaml.load(f, Loader=yaml.Loader)['paths']
             # Update with user provided values
             paths.update(self.yaml['paths'])
-
-            paths['python'] = os.path.join(paths['python_dir'], 'python')
-            paths['java'] = os.path.join(paths['java_dir'], 'java')
-            paths['bowtie'] = os.path.join(paths['bowtie_dir'], 'bowtie')
-            paths['samtools'] = os.path.join(paths['samtools_dir'], 'samtools')
-            paths['trimmomatic_jar'] = os.path.join(script_dir, 'bins', 'trimmomatic-0.33.jar')
-            paths['rsem_tbam2gbam'] = os.path.join(paths['rsem_dir'], 'rsem-tbam2gbam')
-            paths['rsem_prepare_reference'] = os.path.join(paths['rsem_dir'], 'rsem-prepare-reference')
 
             self._paths = type('Paths_anonymous_object',(object,),paths)()
             self._paths.trim_polyA_and_filter_low_complexity_reads_py = os.path.join(script_dir, 'trim_polyA_and_filter_low_complexity_reads.py')
@@ -317,7 +309,7 @@ class IndropsProject():
         if not hasattr(self, '_parameters'):
             #Read defaults
             with open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'default_parameters.yaml'), 'r') as f:
-                self._parameters = yaml.load(f)['parameters']
+                self._parameters = yaml.load(f, Loader=yaml.Loader)['parameters']
             # Update with user provided values
             if 'parameters' in self.yaml:
                 for k, d in self.yaml['parameters'].items():
@@ -509,7 +501,7 @@ class IndropsProject():
         if p_gzip.wait() != 0:
             raise Exception(" Error in rsem-prepare reference ")
 
-        p_rsem = subprocess.Popen([self.paths.rsem_prepare_reference, '--bowtie', '--bowtie-path', self.paths.bowtie_dir,
+        p_rsem = subprocess.Popen(['rsem-prepare-reference', '--bowtie', '--bowtie-path', self.paths.bowtie_dir,
                             '--gtf', gtf_with_genenames_in_transcript_id, 
                             '--polyA', '--polyA-length', '5', genome_filename, self.paths.bowtie_index])
 
@@ -608,7 +600,7 @@ class IndropsLibrary():
 
             for part in self.parts:
                 with open(part.filtering_metrics_filename) as f:
-                    part_stats = yaml.load(f)
+                    part_stats = yaml.load(f, Loader=yaml.Loader)
                     line = [part.run_name, part.part_name, part_stats['read_structure']['Total'], part_stats['read_structure']['Valid'], part_stats['trimmomatic']['output'], part_stats['complexity_filter']['output']]
                     line += [part_stats['read_structure'][k] if k in part_stats['read_structure'] else 0 for k in structure_parts]
                     line += [part_stats['trimmomatic'][k] if k in part_stats['trimmomatic'] else 0 for k in trimmomatic_parts]
@@ -851,7 +843,7 @@ class IndropsLibrary():
 
         print_to_stderr("Merging BAM output.")
         try:
-            subprocess.check_output([self.project.paths.samtools, 'merge', '-f', merged_bam_filename]+genomic_bams, stderr=subprocess.STDOUT)
+            subprocess.check_output(['samtools', 'merge', '-f', merged_bam_filename]+genomic_bams, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as err:
             print_to_stderr("   CMD: %s" % str(err.cmd)[:400])
             print_to_stderr("   stdout/stderr:")
@@ -860,7 +852,7 @@ class IndropsLibrary():
 
         print_to_stderr("Indexing merged BAM output.")
         try:
-            subprocess.check_output([self.project.paths.samtools, 'index', merged_bam_filename], stderr=subprocess.STDOUT)
+            subprocess.check_output(['samtools', 'index', merged_bam_filename], stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as err:
             print_to_stderr("   CMD: %s" % str(err.cmd)[:400])
             print_to_stderr("   stdout/stderr:")
@@ -881,7 +873,7 @@ class IndropsLibrary():
         aligned_bam = os.path.join(self.paths.quant_dir, '%s%s.aligned.bam' % (analysis_prefix,barcode))
 
         # Bowtie command
-        bowtie_cmd = [self.project.paths.bowtie, self.project.paths.bowtie_index, '-q', '-',
+        bowtie_cmd = ['bowtie', self.project.paths.bowtie_index, '-q', '-',
             '-p', '1', '-a', '--best', '--strata', '--chunkmbs', '1000', '--norc', '--sam',
             '-shmem', #should sometimes reduce memory usage...?
             '-m', str(self.project.parameters['bowtie_arguments']['m']),
@@ -894,7 +886,7 @@ class IndropsLibrary():
 
         # Quantification command
         script_dir = os.path.dirname(os.path.realpath(__file__))
-        quant_cmd = [self.project.paths.python, self.project.paths.quantify_umifm_from_alignments_py,
+        quant_cmd = ['python', self.project.paths.quantify_umifm_from_alignments_py,
             '-m', str(self.project.parameters['umi_quantification_arguments']['m']),
             '-u', str(self.project.parameters['umi_quantification_arguments']['u']),
             '-d', str(self.project.parameters['umi_quantification_arguments']['d']),
@@ -954,7 +946,7 @@ class IndropsLibrary():
         genomic_bam = os.path.join(self.paths.quant_dir, '%s%s.genomic.bam' % (analysis_prefix,barcode))
         sorted_bam = os.path.join(self.paths.quant_dir, '%s%s.genomic.sorted.bam' % (analysis_prefix,barcode))
         try:
-            subprocess.check_output([self.project.paths.rsem_tbam2gbam, self.project.paths.bowtie_index, aligned_bam, genomic_bam], stderr=subprocess.STDOUT)
+            subprocess.check_output(['rsem-tbam2gbam', self.project.paths.bowtie_index, aligned_bam, genomic_bam], stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as err:
             print_to_stderr("   CMD: %s" % str(err.cmd)[:100])
             print_to_stderr("   stdout/stderr:")
@@ -962,7 +954,7 @@ class IndropsLibrary():
             raise Exception(" === Error in rsem-tbam2gbam === ")
 
         try:
-            subprocess.check_output([self.project.paths.samtools, 'sort', '-o', sorted_bam, genomic_bam], stderr=subprocess.STDOUT)
+            subprocess.check_output(['samtools', 'sort', '-o', sorted_bam, genomic_bam], stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as err:
             print_to_stderr("   CMD: %s" % str(err.cmd)[:100])
             print_to_stderr("   stdout/stderr:")
@@ -970,7 +962,7 @@ class IndropsLibrary():
             raise Exception(" === Error in samtools sort === ")
 
         try:
-            subprocess.check_output([self.project.paths.samtools, 'index', sorted_bam], stderr=subprocess.STDOUT)
+            subprocess.check_output(['samtools', 'index', sorted_bam], stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as err:
             print_to_stderr("   CMD: %s" % str(err.cmd)[:100])
             print_to_stderr("   stdout/stderr:")
@@ -1069,10 +1061,10 @@ class IndropsLibrary():
         target_bams = [t for t in target_bams if os.path.isfile(t)]
         if target_bams:
             print_to_stderr('  Merging BAM files.')
-            p1 = subprocess.Popen([self.project.paths.samtools, 'merge', '-f', aggregated_bam_output]+target_bams, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+            p1 = subprocess.Popen(['samtools', 'merge', '-f', aggregated_bam_output]+target_bams, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
             if p1.wait() == 0:
                 print_to_stderr('  Indexing merged BAM file.')
-                p2 = subprocess.Popen([self.project.paths.samtools, 'index', aggregated_bam_output], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+                p2 = subprocess.Popen(['samtools', 'index', aggregated_bam_output], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
                 if p2.wait() == 0:
                     for filename in target_bams:
                         os.remove(filename)
@@ -1233,19 +1225,19 @@ class LibrarySequencingPart():
         self.filtering_statistics_counter = defaultdict(int)
         with FIFO(dir=filtered_dir) as fifo2, open(self.filtered_fastq_filename, 'w') as filtered_fastq_file, open(self.filtered_fastq_filename+'.counts.pickle', 'w') as filtered_index_file:
             
-            low_complexity_filter_cmd = [self.project.paths.python, self.project.paths.trim_polyA_and_filter_low_complexity_reads_py,
+            low_complexity_filter_cmd = ['python', self.project.paths.trim_polyA_and_filter_low_complexity_reads_py,
                 '-input', fifo2.filename, 
                 '--min-post-trim-length', self.project.parameters['trimmomatic_arguments']['MINLEN'],
                 '--max-low-complexity-fraction', str(self.project.parameters['low_complexity_filter_arguments']['max_low_complexity_fraction']),
                 ]
-            counter_cmd = [self.project.paths.python,  self.project.paths.count_barcode_distribution_py]
+            counter_cmd = ['python',  self.project.paths.count_barcode_distribution_py]
 
             p2 = subprocess.Popen(low_complexity_filter_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             p3 = subprocess.Popen(counter_cmd, stdin=p2.stdout, stdout=filtered_fastq_file, stderr=filtered_index_file)
 
             with FIFO(dir=filtered_dir) as fifo1:
 
-                trimmomatic_cmd = [self.project.paths.java, '-Xmx500m', '-jar', self.project.paths.trimmomatic_jar,
+                trimmomatic_cmd = ['trimmomatic',
                         'SE', '-threads', "1", '-phred33', fifo1.filename, fifo2.filename]
                 for arg in self.project.parameters['trimmomatic_arguments']['argument_order']:
                     val = self.project.parameters['trimmomatic_arguments'][arg]

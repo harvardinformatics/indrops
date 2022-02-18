@@ -110,19 +110,16 @@ Example:
 If no index exists, it needs to be built
 
 #### Example creation of a human index, using ENSEMBL release 85
-    mkdir -pv DOWNLOAD_DIR
-    cd DOWNLOAD_DIR
-
     # Download the soft-masked, primary assembly Genome Fasta file
-    wget ftp://ftp.ensembl.org/pub/release-85/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz
+    curl --create-dirs -o test/reference/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz ftp://ftp.ensembl.org/pub/release-85/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz
 
     # Download the corresponding GTF file.
-    wget ftp://ftp.ensembl.org/pub/release-85/gtf/homo_sapiens/Homo_sapiens.GRCh38.85.gtf.gz
+    curl -o test/reference/Homo_sapiens.GRCh38.85.gtf.gz ftp://ftp.ensembl.org/pub/release-85/gtf/homo_sapiens/Homo_sapiens.GRCh38.85.gtf.gz
     
     # This command will go through all the steps for creating the index
-    python indrops.py project.yaml build_index \
-        --genome-fasta-gz DOWNLOAD_DIR/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz \
-        --ensembl-gtf-gz DOWNLOAD_DIR/Homo_sapiens.GRCh38.85.gtf.gz
+    python indrops.py test/test_project.yaml build_index \
+        --genome-fasta-gz test/reference/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.gz \
+        --ensembl-gtf-gz test/reference/Homo_sapiens.GRCh38.85.gtf.gz
 
 #### Example creation of a mouse index, using ENSEMBL release 85
     mkdir -pv DOWNLOAD_DIR
