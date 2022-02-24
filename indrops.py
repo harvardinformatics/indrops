@@ -515,7 +515,7 @@ class IndropsProject():
         for tx, seq in transcripts_fasta.items():
             seq = str(seq)
             soft_mask[tx] = set((m.start(), m.end()) for m in re.finditer(r'[atcgn]+', seq))
-        with open(self.paths.bowtie_index + '.soft_masked_regions.pickle', 'w') as out:
+        with open(self.paths.bowtie_index + '.soft_masked_regions.pickle', 'wb') as out:
             pickle.dump(soft_mask, out)
 
 class IndropsLibrary():

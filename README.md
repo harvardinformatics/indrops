@@ -297,7 +297,7 @@ source activate indrops
 2. Create a conda environment from the environment and activate the environment:
 
 ```
-conda env create -f environment.yml -n indrops
+mamba env create -f environment.yml -n indrops
 ...
 conda activate indrops
 ```
