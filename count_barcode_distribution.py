@@ -14,7 +14,7 @@ def count():
 
         barcode_read_counter[cell_name] += 1
         sys.stdout.write(to_fastq(name, seq, qual))
-    pickle.dump(dict(barcode_read_counter), sys.stderr)
+    pickle.dump(dict(barcode_read_counter), sys.stderr.buffer)
 
 if __name__=="__main__":
     import sys, argparse
