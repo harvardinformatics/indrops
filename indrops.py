@@ -1123,14 +1123,14 @@ class LibrarySequencingPart():
     @property
     def part_barcode_counts(self):
         if not hasattr(self, '_part_barcode_counts'):
-            with open(self.barcode_counts_pickle_filename, 'r') as f:
+            with open(self.barcode_counts_pickle_filename, 'rb') as f:
                 self._part_barcode_counts = pickle.load(f)
         return self._part_barcode_counts
 
     @property
     def sorted_index(self):
         if not hasattr(self, '_sorted_index'):
-            with open(self.sorted_gzipped_fastq_index_filename, 'r') as f:
+            with open(self.sorted_gzipped_fastq_index_filename, 'rb') as f:
                 self._sorted_index = pickle.load(f)
         return self._sorted_index
 
@@ -1194,7 +1194,7 @@ class LibrarySequencingPart():
                 if end_pos > start_pos:
                     sorted_output_index[new_bc_name] = (original_bc, start_pos, end_pos, end_pos-start_pos, barcode_reads_count)
 
-        with open(self.sorted_gzipped_fastq_index_filename, 'w') as f:
+        with open(self.sorted_gzipped_fastq_index_filename, 'wb') as f:
             pickle.dump(sorted_output_index, f)      
 
     def get_reads_for_barcode(self, barcode):
