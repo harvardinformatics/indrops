@@ -1481,10 +1481,10 @@ class V3Demultiplexer():
     def _weave_fastqs(self, fastqs):
         last_extension = [fn.split('.')[-1] for fn in fastqs]
         if all(ext == 'gz' for ext in last_extension):
-            processes = [subprocess.Popen("gzip --stdout -d %s" % (fn), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) for fn in fastqs]
+            processes = [subprocess.Popen("gzip --stdout -d %s" % (fn), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) for fn in fastqs]
             streams = [r.stdout for r in processes]
         elif all(ext == 'bz2' for ext in last_extension):
-            processes = [subprocess.Popen("bzcat %s" % (fn), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) for fn in fastqs]
+            processes = [subprocess.Popen("bzcat %s" % (fn), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) for fn in fastqs]
             streams = [r.stdout for r in processes]
         elif all(ext == 'fastq' for ext in last_extension):
             streams = [open(fn, 'r') for fn in fastqs]
@@ -1594,9 +1594,6 @@ class V3Demultiplexer():
         common__ = defaultdict(int)
         print_to_stderr('Filtering %s, file %s' % (self.run_name, self.input_filename))
         for r_name, seqs, quals in self._weave_fastqs(input_fastqs):
-
-            # Python 3 compatibility in mind!
-            seqs = [s.decode('utf-8') for s in seqs]
 
             keep, lib_index, result = self._process_reads(r_name, seqs, quals,
                                                     error_corrected_barcodes, error_corrected_rev_compl_barcodes, 
