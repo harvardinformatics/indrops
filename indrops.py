@@ -1165,11 +1165,11 @@ class LibrarySequencingPart():
                     print_to_stderr('Read in %.02f percent of all reads (%d)' % (100.*total_processed_reads/total_reads, total_processed_reads))
                 
                 if bc in abundant_barcodes:
-                    barcode_gzippers[bc].write(to_fastq(name, seq, qual))
+                    barcode_gzippers[bc].write(to_fastq(name, seq, qual).encode())
                     bcs_with_data.add(bc)
                 else:
                     total_ignored_reads += 1
-                    barcode_gzippers['ignored'].write(to_fastq(name, seq, qual))
+                    barcode_gzippers['ignored'].write(to_fastq(name, seq, qual).encode())
                     bcs_with_data.add('ignored')
 
 
