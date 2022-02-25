@@ -63,11 +63,12 @@ def to_fastq_lines(bc, umi, seq, qual, read_name=''):
 
 def from_fastq(handle):
     while True:
-        name = next(handle).rstrip()[1:] #Read name
-        seq = next(handle).rstrip() #Read seq
-        next(handle) #+ line
-        qual = next(handle).rstrip() #Read qual
-        if not name or not seq or not qual:
+        try:
+            name = next(handle).rstrip()[1:] #Read name
+            seq = next(handle).rstrip() #Read seq
+            next(handle) #+ line
+            qual = next(handle).rstrip() #Read qual
+        except StopIteration:
             break
         yield name, seq, qual
 
