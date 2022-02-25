@@ -12,7 +12,7 @@ from io import BytesIO
 import numpy as np
 import re
 import shutil
-import gzip
+import bz2, gzip
 
 # product: product(A, B) returns the same as ((x,y) for x in A for y in B).
 # combination: Return r length subsequences of elements from the input iterable.
@@ -103,7 +103,7 @@ def build_barcode_neighborhoods(barcode_file, expect_reverse_complement=True):
     mapping2 = defaultdict(set)
     
     #Build the full neighborhood and iterate through barcodes
-    with open(barcode_file, 'rU') as f:
+    with open(barcode_file, 'rt') as f:
         # iterate through each barcode (rstrip cleans string of whitespace)
         for line in f:
             barcode = line.rstrip()
@@ -1243,18 +1243,20 @@ class LibrarySequencingPart():
                     val = self.project.parameters['trimmomatic_arguments'][arg]
                     trimmomatic_cmd.append('%s:%s' % (arg, val))
 
-                p1 = subprocess.Popen(trimmomatic_cmd, stderr=subprocess.PIPE)
+                p1 = subprocess.Popen(trimmomatic_cmd, stderr=subprocess.PIPE, text=True)
 
                 fifo1_filehandle = open(fifo1.filename, 'w')
                 yield fifo1_filehandle
                 fifo1_filehandle.close()
                 trimmomatic_stderr = p1.stderr.read().splitlines()
-                if trimmomatic_stderr[2] != 'TrimmomaticSE: Completed successfully':
-                    raise Exception('Trimmomatic did not complete succesfully on %s' % filtered_filename)
-                trimmomatic_metrics = trimmomatic_stderr[1].split() 
+                p1.wait()
+                if p1.returncode != 0:
+                    raise Exception("\n".join(['Trimmomatic did not complete succesfully on '
+                                               f'{self.filtered_fastq_filename}:']
+                                               + trimmomatic_stderr))
+                trimmomatic_metrics = trimmomatic_stderr[-2].split() 
                 # ['Input', 'Reads:', #READS, 'Surviving:', #SURVIVING, (%SURVIVING), 'Dropped:', #DROPPED, (%DROPPED)]
                 trimmomatic_metrics = {'input' : trimmomatic_metrics[2], 'output': trimmomatic_metrics[4], 'dropped': trimmomatic_metrics[7]}
-                p1.wait()
 
             complexity_filter_metrics = pickle.load(p2.stderr)
             p2.wait()
@@ -1343,51 +1345,36 @@ class V1V2Filtering(LibrarySequencingPart):
         Returns only R1_seq, R2_seq and R2_qual.
         """
 
-        is_gz_compressed = False
-        is_bz_compressed = False
-        if r1_fastq.split('.')[-1] == 'gz' and r2_fastq.split('.')[-1] == 'gz':
-            is_gz_compressed = True
-            
-        #Added bz2 support VS
-        if r1_fastq.split('.')[-1] == 'bz2' and r2_fastq.split('.')[-1] == 'bz2':
-            is_bz_compressed = True
-
-        # Decompress Gzips using subprocesses because python gzip is incredibly slow.
-        if is_gz_compressed:    
-            r1_gunzip = subprocess.Popen("gzip --stdout -d %s" % (r1_fastq), shell=True, stdout=subprocess.PIPE)
-            r1_stream = r1_gunzip.stdout
-            r2_gunzip = subprocess.Popen("gzip --stdout -d %s" % (r2_fastq), shell=True, stdout=subprocess.PIPE)
-            r2_stream = r2_gunzip.stdout
-        elif is_bz_compressed:
-            r1_bunzip = subprocess.Popen("bzcat %s" % (r1_fastq), shell=True, stdout=subprocess.PIPE)
-            r1_stream = r1_bunzip.stdout
-            r2_bunzip = subprocess.Popen("bzcat %s" % (r2_fastq), shell=True, stdout=subprocess.PIPE)
-            r2_stream = r2_bunzip.stdout
+        if Path(r1_fastq).suffix == '.gz':
+            fopen = gzip.open
+        elif Path(r1_fastq).suffix == '.bz2':
+            fopen = bz2.open
         else:
-            r1_stream = open(r1_fastq, 'r')
-            r2_stream = open(r2_fastq, 'r')
+            fopen = open
 
-        while True:
-            #Read 4 lines from each FastQ
-            name = next(r1_stream).rstrip()[1:].split()[0] #Read name
-            r1_seq = next(r1_stream).rstrip() #Read seq
-            next(r1_stream) #+ line
-            r1_qual = next(r1_stream).rstrip() #Read qual
-            
-            next(r2_stream) #Read name
-            r2_seq = next(r2_stream).rstrip() #Read seq
-            next(r2_stream) #+ line
-            r2_qual = next(r2_stream).rstrip() #Read qual
-            
-            # changed to allow for empty reads (caused by adapter trimming)
-            if name:
-                yield name, r1_seq, r1_qual, r2_seq, r2_qual
-            else:
-            # if not r1_seq or not r2_seq:
-                break
+        with fopen(r1_fastq, "rt") as r1_stream, fopen(r2_fastq, "rt") as r2_stream:
+            while True:
+                #Read 4 lines from each FastQ
+                try:
+                    name = next(r1_stream).rstrip()[1:].split()[0] #Read name
+                    r1_seq = next(r1_stream).rstrip() #Read seq
+                    next(r1_stream) #+ line
+                    r1_qual = next(r1_stream).rstrip() #Read qual
+                    
+                    next(r2_stream) #Read name
+                    r2_seq = next(r2_stream).rstrip() #Read seq
+                    next(r2_stream) #+ line
+                    r2_qual = next(r2_stream).rstrip() #Read qual
+                except StopIteration:
+                    break
+                
+                # changed to allow for empty reads (caused by adapter trimming)
+                if name:
+                    yield name, r1_seq, r1_qual, r2_seq, r2_qual
+                else:
+                # if not r1_seq or not r2_seq:
+                    break
 
-        r1_stream.close()
-        r2_stream.close()
 
     def _process_reads(self, name, read, valid_bc1s={}, valid_bc2s={}):
         """
