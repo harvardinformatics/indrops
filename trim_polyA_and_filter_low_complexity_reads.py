@@ -61,7 +61,7 @@ if __name__=="__main__":
     parser.add_argument('-input', type=argparse.FileType('r'), nargs='?', default=sys.stdin)
     parser.add_argument('-output', type=argparse.FileType('w'), nargs='?', default=sys.stdout)
     parser.add_argument('-rejected', type=argparse.FileType('w'), nargs='?', default=False)
-    parser.add_argument('-metrics', type=argparse.FileType('w'), nargs='?', default=sys.stderr)
+    parser.add_argument('-metrics', type=argparse.FileType('wb'), nargs='?', default=sys.stderr.buffer)
     parser.add_argument('--max-low-complexity-fraction', type=float, nargs='?', default=1.0)
     parser.add_argument('--min-post-trim-length', type=int, nargs='?', default=20)
     args = parser.parse_args()
