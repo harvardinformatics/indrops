@@ -553,7 +553,7 @@ class IndropsLibrary():
     @property
     def abundant_barcodes(self):
         if not hasattr(self, '_abundant_barcodes'):
-            with open(self.paths.abundant_barcodes_names_filename) as f:
+            with open(self.paths.abundant_barcodes_names_filename, 'rb') as f:
                 self._abundant_barcodes = pickle.load(f)
         return self._abundant_barcodes
 
