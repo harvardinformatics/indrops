@@ -1492,12 +1492,16 @@ class V3Demultiplexer():
             raise("ERROR: Different files are compressed differently. Check input.")
 
         while True:
-            names = [next(s)[:-1].split()[0] for s in streams]
-            seqs = [next(s)[:-1] for s in streams]
-            blanks = [next(s)[:-1]  for s in streams]
-            quals = [next(s)[:-1]  for s in streams]
+            try:
+                names = [next(s)[:-1].split()[0] for s in streams]
+                seqs = [next(s)[:-1] for s in streams]
+                blanks = [next(s)[:-1]  for s in streams]
+                quals = [next(s)[:-1]  for s in streams]
 
-            assert all(name==names[0] for name in names)
+                assert all(name==names[0] for name in names)
+            except StopIteration:
+                break
+
             yield names[0], seqs, quals
 
         for s in streams:
