@@ -576,7 +576,7 @@ class IndropsLibrary():
             abundant_barcodes[bc] = (self.project.stable_barcode_names[self.version][bc], self.barcode_counts[bc])
 
         self._abundant_barcodes = abundant_barcodes
-        with open(self.paths.abundant_barcodes_names_filename, 'w') as f:
+        with open(self.paths.abundant_barcodes_names_filename, 'wb') as f:
             pickle.dump(abundant_barcodes, f)
 
         # Create table about the filtering process
