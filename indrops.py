@@ -620,8 +620,8 @@ class IndropsLibrary():
         for bc, count in self.barcode_counts.items():
             count_freq[count] += 1
 
-        x = np.array(count_freq.keys())
-        y = np.array(count_freq.values())
+        x = np.array([x for x in count_freq.keys()])
+        y = np.array([y for y in count_freq.values()])
         w = x*y
 
         # need to use non-intenactive Agg backend
