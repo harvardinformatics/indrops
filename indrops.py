@@ -874,7 +874,7 @@ class IndropsLibrary():
         aligned_bam = os.path.join(self.paths.quant_dir, '%s%s.aligned.bam' % (analysis_prefix,barcode))
 
         # Bowtie command
-        bowtie_cmd = ['bowtie', self.project.paths.bowtie_index, '-q', '-',
+        bowtie_cmd = ['bowtie', '-x', self.project.paths.bowtie_index, '-q', '-',
             '-p', '1', '-a', '--best', '--strata', '--chunkmbs', '1000', '--norc', '--sam',
             '-shmem', #should sometimes reduce memory usage...?
             '-m', str(self.project.parameters['bowtie_arguments']['m']),
