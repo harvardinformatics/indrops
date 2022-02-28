@@ -259,7 +259,7 @@ def quant(args):
             max_contrib = max(gene_contrib.values())
 
             #Gene with max contrib
-            max_contrib_genes = (gene for (gene, contrib) in gene_contrib.items() if contrib == max_contrib)
+            max_contrib_genes = tuple(gene for (gene, contrib) in gene_contrib.items() if contrib == max_contrib)
 
             #Pick a gene among those with the highest value. Which doesn't matter until the last step
             g = max_contrib_genes[0]
