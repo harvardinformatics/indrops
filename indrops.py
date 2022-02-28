@@ -1207,8 +1207,8 @@ class LibrarySequencingPart():
             sorted_output.seek(start_byte_offset)
             byte_buffer = BytesIO(sorted_output.read(byte_length))
             ungzipper = gzip.GzipFile(fileobj=byte_buffer, mode='rb')
-            while True:
-                yield next(ungzipper)
+            for line in ungzipper:
+                yield line
 
     @contextmanager
     def trimmomatic_and_low_complexity_filter_process(self):
