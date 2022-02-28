@@ -1199,7 +1199,7 @@ class LibrarySequencingPart():
 
     def get_reads_for_barcode(self, barcode):
         if barcode not in self.sorted_index:
-            raise StopIteration
+            return
 
         original_barcode, start_byte_offset, end_byte_offset, byte_length, barcode_reads = self.sorted_index[barcode]
 
