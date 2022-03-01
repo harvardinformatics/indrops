@@ -912,8 +912,8 @@ class IndropsLibrary():
 
         # Spawn processes
 
-        p1 = subprocess.Popen(bowtie_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        p2 = subprocess.Popen(quant_cmd, stdin=p1.stdout, stderr=subprocess.PIPE)
+        p1 = subprocess.Popen(bowtie_cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        p2 = subprocess.Popen(quant_cmd, stdin=p1.stdout, stderr=subprocess.PIPE, text=True)
         
                 
         for line in self.get_reads_for_barcode(barcode, run_filter=run_filter):
@@ -1206,9 +1206,9 @@ class LibrarySequencingPart():
         with open(self.sorted_gzipped_fastq_filename, 'rb') as sorted_output:
             sorted_output.seek(start_byte_offset)
             byte_buffer = BytesIO(sorted_output.read(byte_length))
-            ungzipper = gzip.GzipFile(fileobj=byte_buffer, mode='rb')
-            for line in ungzipper:
-                yield line
+            with gzip.open(byte_buffer, mode='rt') as ungzipper:
+                for line in ungzipper:
+                    yield line
 
     @contextmanager
     def trimmomatic_and_low_complexity_filter_process(self):
