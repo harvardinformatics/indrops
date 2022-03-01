@@ -122,19 +122,16 @@ If no index exists, it needs to be built
         --ensembl-gtf-gz test/reference/Homo_sapiens.GRCh38.85.gtf.gz
 
 #### Example creation of a mouse index, using ENSEMBL release 85
-    mkdir -pv DOWNLOAD_DIR
-    cd DOWNLOAD_DIR
-
     # Download the soft-masked, primary assembly Genome Fasta file
-    wget ftp://ftp.ensembl.org/pub/release-85/fasta/mus_musculus/dna/Mus_musculus.GRCm38.dna_sm.primary_assembly.fa.gz
+    curl --create-dirs -o test/reference/Mus_musculus.GRCm38.dna_sm.primary_assembly.fa.gz ftp://ftp.ensembl.org/pub/release-85/fasta/mus_musculus/dna/Mus_musculus.GRCm38.dna_sm.primary_assembly.fa.gz
 
     # Download the corresponding GTF file.
-    wget ftp://ftp.ensembl.org/pub/release-85/gtf/mus_musculus/Mus_musculus.GRCm38.85.gtf.gz
+    curl -o test/reference/Mus_musculus.GRCm38.85.gtf.gz ftp://ftp.ensembl.org/pub/release-85/gtf/mus_musculus/Mus_musculus.GRCm38.85.gtf.gz
     
     # This command will go through all the steps for creating the index
-    python indrops.py project.yaml build_index \
-        --genome-fasta-gz DOWNLOAD_DIR/Mus_musculus.GRCm38.dna_sm.primary_assembly.fa.gz \
-        --ensembl-gtf-gz DOWNLOAD_DIR/Mus_musculus.GRCm38.85.gtf.gz
+    python indrops.py test/test_project.yaml build_index \
+        --genome-fasta-gz test/reference/Mus_musculus.GRCm38.dna_sm.primary_assembly.fa.gz \
+        --ensembl-gtf-gz test/reference/Mus_musculus.GRCm38.85.gtf.gz
 
 
 ### 1. Filter
@@ -281,12 +278,21 @@ by specifying the total number of jobs (--total-workers) and the index of the cu
 
 *On Cannon*: 
 
-Load the default `Anaconda3` environment module, create a conda environment (called `indrops`) with the software defined in the environment.yml file in this repository, and activate the conda environment:
+Load the default `python` environment module, create a conda environment (called `indrops`) with the software defined in the environment.yml file in this repository, and activate the conda environment:
 
 ```
-ml Anaconda3
-conda env create -f environment.yml -n indrops
+module load python
+conda create -c conda-forge -n mamba mamba
 ...
+source activate mamba
+mamba env create -f environment.yml -n indrops
+...
+source activate indrops
+```
+
+In batch job scripts or future interactive sessions, this environment can be activated thus:
+```
+module load python
 source activate indrops
 ```
 
