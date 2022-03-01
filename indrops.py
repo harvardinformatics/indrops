@@ -1065,7 +1065,7 @@ class IndropsLibrary():
             p1 = subprocess.Popen(['samtools', 'merge', '-f', aggregated_bam_output]+target_bams, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
             if p1.wait() == 0:
                 print_to_stderr('  Indexing merged BAM file.')
-                p2 = subprocess.Popen(['samtools', 'index', aggregated_bam_output], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+                p2 = subprocess.Popen(['samtools', 'index', aggregated_bam_output], stderr=subprocess.PIPE, stdout=subprocess.PIPE, text=true)
                 if p2.wait() == 0:
                     for filename in target_bams:
                         os.remove(filename)
